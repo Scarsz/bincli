@@ -53,14 +53,21 @@ func Create(options Options) Bin {
 	}
 	payload["files"] = filesPayload
 
+	//payloadJson, err := json.Marshal(payload)
+	//fmt.Println(string(payloadJson))
+
 	resp, err := req.Post("https://bin.scarsz.me/v1/post", req.BodyJSON(payload))
-	if err != nil { panic(err) }
+	if err != nil {
+		panic(err)
+	}
 
 	var response map[string]interface{}
 	err = json.Unmarshal([]byte(resp.String()), &response)
-	if err != nil { panic(err) }
+	if err != nil {
+		panic(err)
+	}
 
-	return Bin {
+	return Bin{
 		UUID:        uuid.MustParse(response["bin"].(string)),
 		Key:         key,
 		Hits:        0,
@@ -73,11 +80,15 @@ func Create(options Options) Bin {
 
 func Retrieve(uuid uuid.UUID, key string) (Bin, error) {
 	resp, err := req.Get("https://bin.scarsz.me/" + uuid.String() + ".json")
-	if err != nil { panic(err) }
+	if err != nil {
+		panic(err)
+	}
 
 	var response map[string]interface{}
 	err = json.Unmarshal([]byte(resp.String()), &response)
-	if err != nil { return Bin{}, err }
+	if err != nil {
+		return Bin{}, err
+	}
 
 	if resp.Response().StatusCode == 404 {
 		return Bin{}, errors.New("Bin " + uuid.String() + " doesn't exist (404)")
@@ -86,16 +97,18 @@ func Retrieve(uuid uuid.UUID, key string) (Bin, error) {
 	var descriptionBytes []byte
 	if response["description"] != nil {
 		descriptionBytes, err = b64.StdEncoding.DecodeString(response["description"].(string))
-		if err != nil { return Bin{}, err }
+		if err != nil {
+			return Bin{}, err
+		}
 	}
 
 	b := Bin{
-		UUID:        uuid,
-		Key:         key,
-		Hits:        int(response["hits"].(float64)),
-		Expiration:  int(response["expiration"].(float64)),
-		Timestamp:   int64(response["time"].(float64)),
-		Files:       nil,
+		UUID:       uuid,
+		Key:        key,
+		Hits:       int(response["hits"].(float64)),
+		Expiration: int(response["expiration"].(float64)),
+		Timestamp:  int64(response["time"].(float64)),
+		Files:      nil,
 	}
 	if len(descriptionBytes) > 0 {
 		b.Description = string(crypto.Decrypt([]byte(key), descriptionBytes))
