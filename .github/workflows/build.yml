@@ -28,3 +28,9 @@ jobs:
         uses: actions/checkout@v2
       - name: Build
         run: go build -v
+      - uses: actions/upload-artifact@v2
+        with:
+          name: bincli-${{ runner.os }}
+          path: |
+            bincli
+            bincli.exe
