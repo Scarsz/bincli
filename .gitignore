@@ -1,5 +1,6 @@
 .idea
 
+/bincli
 *.exe
 *.exe~
 *.dll
