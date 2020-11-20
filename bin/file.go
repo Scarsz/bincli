@@ -20,12 +20,16 @@ type File struct {
 
 func FileFromFileName(fileName string) File {
 	file, err := os.Open(fileName)
-	if err != nil { panic(err) }
+	if err != nil {
+		panic(err)
+	}
 
 	data, err := ioutil.ReadAll(file)
-	if err != nil { panic(err) }
+	if err != nil {
+		panic(err)
+	}
 
-	return File {
+	return File{
 		UUID:    uuid.New(),
 		Name:    fileName,
 		Content: data,
@@ -37,7 +41,7 @@ func FileFromText(name string, text string, description string) File {
 		UUID:        uuid.New(),
 		Name:        name,
 		Content:     []byte(text),
-		Description: text,
+		Description: description,
 	}
 }
 
@@ -45,13 +49,15 @@ func (file *File) ContentType() string {
 	ext := strings.ToLower(filepath.Ext(file.Name))
 
 	switch ext {
-	case ".log":
-	case ".txt":
-	case ".rtf":
+	case ".log", ".txt", ".rtf":
 		return "text/plain"
+	default:
+		if len(file.Content) < 512 {
+			return strings.Split(http.DetectContentType(file.Content), ";")[0]
+		} else {
+			return strings.Split(http.DetectContentType(file.Content[0:512]), ";")[0]
+		}
 	}
-
-	return strings.Split(http.DetectContentType(file.Content[0:512]), ";")[0]
 }
 
 func (file *File) ContentText() string {
@@ -62,7 +68,9 @@ func (file *File) EncryptAndEncode(key []byte) (name, content, contentType, desc
 	name = b64.StdEncoding.EncodeToString(crypto.EncryptString(key, file.Name))
 	content = b64.StdEncoding.EncodeToString(crypto.Encrypt(key, file.Content))
 	contentType = b64.StdEncoding.EncodeToString(crypto.EncryptString(key, file.ContentType()))
-	description = b64.StdEncoding.EncodeToString(crypto.EncryptString(key, file.Description))
+	if file.Description != "" {
+		description = b64.StdEncoding.EncodeToString(crypto.EncryptString(key, file.Description))
+	}
 	return name, content, contentType, description
 }
 
@@ -79,4 +87,3 @@ func (file *File) SerializeMap(key []byte) map[string]interface{} {
 
 	return m
 }
-
