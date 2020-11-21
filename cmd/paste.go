@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"github.com/Scarsz/bincli/bin"
+	"github.com/atotto/clipboard"
 	"github.com/spf13/cobra"
 	"os"
 	"strings"
@@ -42,4 +43,5 @@ func Paste(cmd *cobra.Command, args []string) {
 		Files:      files,
 	})
 	fmt.Println(b.URL())
+	_ = clipboard.WriteAll(b.URL())
 }

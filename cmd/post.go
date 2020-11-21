@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"github.com/Scarsz/bincli/bin"
+	"github.com/atotto/clipboard"
 	"github.com/spf13/cobra"
 )
 
@@ -17,4 +18,5 @@ func Post(cmd *cobra.Command, args []string) {
 		Files:      files,
 	})
 	fmt.Println(b.URL())
+	_ = clipboard.WriteAll(b.URL())
 }
