@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	rootCmd := &cobra.Command{Use: "bin"}
+	rootCmd := &cobra.Command{Use: "bincli"}
 
 	cmdInfo := &cobra.Command{
 		Use:   "info <id/url>",
