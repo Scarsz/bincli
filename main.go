@@ -10,7 +10,7 @@ func main() {
 	rootCmd := &cobra.Command{Use: "bincli"}
 
 	cmdInfo := &cobra.Command{
-		Use:   "info <id/url>",
+		Use:   "info <bin>",
 		Short: "Get information about a bin",
 		Args:  cobra.MinimumNArgs(1),
 		Run:   cmd.Info,
@@ -22,7 +22,7 @@ func main() {
 		Run:   cmd.Purge,
 	}
 	cmdGet := &cobra.Command{
-		Use:   "get <url>",
+		Use:   "get <bin>",
 		Short: "Download a bin",
 		Long:  "Download a bin from the given URL",
 		Args:  cobra.MinimumNArgs(1),
@@ -36,7 +36,7 @@ func main() {
 	}
 	cmdPaste := &cobra.Command{
 		Use:   "paste <text>",
-		Short: "Create a new bin with the given text",
+		Short: "Create a new bin with the given text or piped input",
 		Run:   cmd.Paste,
 	}
 
