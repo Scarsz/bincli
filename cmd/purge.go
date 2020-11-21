@@ -22,7 +22,8 @@ func Purge(cmd *cobra.Command, args []string) {
 		if !strings.HasPrefix(d.Name(), "bin-") {
 			continue
 		}
-		err := os.RemoveAll(d.Name())
+		fmt.Println(os.TempDir() + string(os.PathSeparator) + d.Name())
+		err := os.RemoveAll(os.TempDir() + string(os.PathSeparator) + d.Name())
 		if err != nil {
 			fmt.Println("ERROR: Failed to delete " + d.Name() + ": " + err.Error())
 		} else {
