@@ -10,11 +10,13 @@ import (
 
 func Encrypt(key []byte, bytes []byte) []byte {
 	block, err := aes.NewCipher(key)
-	if err != nil { panic(err) }
+	if err != nil {
+		panic(err)
+	}
 
 	bytes = PKCS5Padding(bytes)
 
-	encrypted := make([]byte, aes.BlockSize + len(bytes))
+	encrypted := make([]byte, aes.BlockSize+len(bytes))
 	iv := encrypted[:aes.BlockSize]
 	if _, err := io.ReadFull(rand.Reader, iv); err != nil {
 		panic(err)
@@ -31,6 +33,7 @@ func EncryptString(key []byte, text string) []byte {
 }
 
 func PKCS5Padding(b []byte) []byte {
-	padding := aes.BlockSize - len(b) % aes.BlockSize
-	return append(b, bytes.Repeat([]byte{byte(padding)}, padding)...)
+	paddingCount := aes.BlockSize - len(b)%aes.BlockSize
+	padding := bytes.Repeat([]byte{byte(paddingCount)}, paddingCount)
+	return append(b, padding...)
 }

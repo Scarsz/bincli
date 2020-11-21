@@ -4,6 +4,7 @@ import (
 	b64 "encoding/base64"
 	"github.com/Scarsz/bincli/crypto"
 	"github.com/google/uuid"
+	"github.com/tidwall/gjson"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -45,6 +46,28 @@ func FileFromText(name string, text string, description string) File {
 	}
 }
 
+func FileFromEncryptedMap(m map[string]gjson.Result, key string) File {
+	name, err := b64.StdEncoding.DecodeString(m["name"].String())
+	if err != nil {
+		panic(err)
+	}
+	content, err := b64.StdEncoding.DecodeString(m["content"].String())
+	if err != nil {
+		panic(err)
+	}
+	description, err := b64.StdEncoding.DecodeString(m["description"].String())
+	if err != nil {
+		panic(err)
+	}
+
+	return File{
+		UUID:        uuid.MustParse(m["id"].String()),
+		Name:        string(crypto.Decrypt([]byte(key), name)),
+		Content:     crypto.Decrypt([]byte(key), content),
+		Description: string(crypto.Decrypt([]byte(key), description)),
+	}
+}
+
 func (file *File) ContentType() string {
 	ext := strings.ToLower(filepath.Ext(file.Name))
 
@@ -60,8 +83,19 @@ func (file *File) ContentType() string {
 	}
 }
 
-func (file *File) ContentText() string {
+func (file *File) Available() bool {
+	return file.Name != ""
+}
+
+func (file *File) ContentString() string {
 	return string(file.Content)
+}
+
+func (file *File) Save(path string) {
+	err := ioutil.WriteFile(path, file.Content, 0644)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func (file *File) EncryptAndEncode(key []byte) (name, content, contentType, description string) {

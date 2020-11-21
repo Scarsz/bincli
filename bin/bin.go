@@ -2,12 +2,13 @@ package bin
 
 import (
 	b64 "encoding/base64"
-	"encoding/json"
 	"errors"
 	"github.com/Scarsz/bincli/crypto"
 	"github.com/dchest/uniuri"
 	"github.com/google/uuid"
 	"github.com/imroc/req"
+	"github.com/tidwall/gjson"
+	"io/ioutil"
 	"time"
 )
 
@@ -32,6 +33,28 @@ func (bin *Bin) URL() string {
 		return "https://bin.scarsz.me/" + bin.UUID.String() + "#" + bin.Key
 	} else {
 		return "https://bin.scarsz.me/" + bin.UUID.String()
+	}
+}
+
+func (bin *Bin) SaveToTemp() string {
+	dir, err := ioutil.TempDir("", "bin-"+bin.UUID.String()+"-*")
+	if err != nil {
+		panic(err)
+	}
+	bin.Save(dir)
+	return dir
+}
+
+func (bin *Bin) Save(path string) {
+	for _, file := range bin.Files {
+		if !file.Available() {
+			continue
+		}
+
+		err := ioutil.WriteFile(path+"/"+file.Name, file.Content, 0644)
+		if err != nil {
+			panic(err)
+		}
 	}
 }
 
@@ -60,15 +83,10 @@ func Create(options Options) Bin {
 	if err != nil {
 		panic(err)
 	}
-
-	var response map[string]interface{}
-	err = json.Unmarshal([]byte(resp.String()), &response)
-	if err != nil {
-		panic(err)
-	}
+	json := resp.String()
 
 	return Bin{
-		UUID:        uuid.MustParse(response["bin"].(string)),
+		UUID:        uuid.MustParse(gjson.Get(json, "bin").String()),
 		Key:         key,
 		Hits:        0,
 		Description: options.Description,
@@ -78,40 +96,43 @@ func Create(options Options) Bin {
 	}
 }
 
-func Retrieve(uuid uuid.UUID, key string) (Bin, error) {
-	resp, err := req.Get("https://bin.scarsz.me/" + uuid.String() + ".json")
+func Retrieve(id uuid.UUID, key string) (Bin, error) {
+	resp, err := req.Get("https://bin.scarsz.me/" + id.String() + ".json")
 	if err != nil {
 		panic(err)
 	}
-
-	var response map[string]interface{}
-	err = json.Unmarshal([]byte(resp.String()), &response)
-	if err != nil {
-		return Bin{}, err
-	}
+	json := resp.String()
 
 	if resp.Response().StatusCode == 404 {
-		return Bin{}, errors.New("Bin " + uuid.String() + " doesn't exist (404)")
+		return Bin{}, errors.New("Bin " + id.String() + " doesn't exist (404)")
 	}
 
 	var descriptionBytes []byte
-	if response["description"] != nil {
-		descriptionBytes, err = b64.StdEncoding.DecodeString(response["description"].(string))
+	if gjson.Get(json, "description").Exists() {
+		descriptionBytes, err = b64.StdEncoding.DecodeString(gjson.Get(json, "description").String())
 		if err != nil {
 			return Bin{}, err
 		}
 	}
 
 	b := Bin{
-		UUID:       uuid,
+		UUID:       id,
 		Key:        key,
-		Hits:       int(response["hits"].(float64)),
-		Expiration: int(response["expiration"].(float64)),
-		Timestamp:  int64(response["time"].(float64)),
-		Files:      nil,
+		Hits:       int(gjson.Get(json, "hits").Int()),
+		Expiration: int(gjson.Get(json, "hits").Int()),
+		Timestamp:  gjson.Get(json, "time").Int(),
 	}
-	if len(descriptionBytes) > 0 {
-		b.Description = string(crypto.Decrypt([]byte(key), descriptionBytes))
+	if len(key) == 32 {
+		if len(descriptionBytes) > 0 {
+			b.Description = string(crypto.Decrypt([]byte(key), descriptionBytes))
+		}
+		for _, fileMap := range gjson.Get(json, "files").Array() {
+			b.Files = append(b.Files, FileFromEncryptedMap(fileMap.Map(), key))
+		}
+	} else {
+		for _, fileMap := range gjson.Get(json, "files").Array() {
+			b.Files = append(b.Files, File{UUID: uuid.MustParse(fileMap.Map()["id"].String())})
+		}
 	}
 
 	return b, nil

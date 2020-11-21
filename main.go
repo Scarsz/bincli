@@ -16,7 +16,11 @@ func main() {
 		Run:   cmd.Info,
 	}
 
-	// uploading commands
+	cmdPurge := &cobra.Command{
+		Use:   "purge",
+		Short: "Clear temporary folder of downloaded bins",
+		Run:   cmd.Purge,
+	}
 	cmdGet := &cobra.Command{
 		Use:   "get <url>",
 		Short: "Download a bin",
@@ -36,7 +40,7 @@ func main() {
 		Run:   cmd.Paste,
 	}
 
-	rootCmd.AddCommand(cmdInfo, cmdGet, cmdPost, cmdPaste)
+	rootCmd.AddCommand(cmdInfo, cmdPurge, cmdGet, cmdPost, cmdPaste)
 
 	err := rootCmd.Execute()
 	if err != nil {

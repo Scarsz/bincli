@@ -28,7 +28,7 @@ func Info(cmd *cobra.Command, args []string) {
 		key := result["key"]
 
 		if key == "" {
-			fmt.Println("WARN: Bin " + id.String() + " doesn't have a key, only minimal information is known")
+			fmt.Println("WARN: Bin " + id.String() + " doesn't have a valid key, only minimal information is known")
 		}
 
 		b, err := bin.Retrieve(id, result["key"])
@@ -38,8 +38,21 @@ func Info(cmd *cobra.Command, args []string) {
 		}
 
 		fmt.Println("Bin", id.String())
-		if b.Description != "" { fmt.Println("-> Description:", b.Description) }
-		fmt.Println("Hits:", b.Hits)
-		fmt.Println("File count:", len(b.Files))
+		if b.Description != "" {
+			fmt.Println("- Description:", b.Description)
+		}
+		fmt.Printf("- Hits: %d\n", b.Hits)
+		if len(b.Files) > 0 {
+			fmt.Printf("- %d files\n", len(b.Files))
+			for _, file := range b.Files {
+				if file.Available() {
+					fmt.Println("  File", file.Name)
+					if file.Description != "" {
+						fmt.Println("    Description:", file.Description)
+					}
+					fmt.Printf("    Content: %s, %d bytes\n", file.ContentType(), len(file.Content))
+				}
+			}
+		}
 	}
 }

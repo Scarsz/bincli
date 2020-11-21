@@ -6,22 +6,25 @@ import (
 )
 
 func Decrypt(key []byte, bytes []byte) []byte {
+	if len(bytes) == 0 {
+		return bytes
+	}
+
 	iv := bytes[:16]
-	bytes = bytes[16:]
+	encrypted := bytes[16:]
 
 	block, err := aes.NewCipher(key)
-	if err != nil { panic(err) }
+	if err != nil {
+		panic(err)
+	}
 
 	mode := cipher.NewCBCDecrypter(block, iv)
-	decrypted := make([]byte, len(bytes))
-	mode.CryptBlocks(decrypted, bytes)
-
-	bytes = PKCS5UnPadding(bytes)
-
-	return bytes
+	decrypted := make([]byte, len(encrypted))
+	mode.CryptBlocks(decrypted, encrypted)
+	return PKCS5Trimming(decrypted)
 }
 
-func PKCS5UnPadding(b []byte) []byte {
-	length := len(b)
-	return b[:(length - int(b[length-1]))]
+func PKCS5Trimming(b []byte) []byte {
+	length := b[len(b)-1]
+	return b[:len(b)-int(length)]
 }
